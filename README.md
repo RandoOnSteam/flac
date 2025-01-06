@@ -1,0 +1,1 @@
+This is Ziph's Flac library with modifications for older compilers
