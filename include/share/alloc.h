@@ -42,25 +42,33 @@
  */
 
 #include <limits.h> /* for SIZE_MAX */
-#ifdef HAVE_STDINT_H
+#if defined(HAVE_STDINT_H) || defined(__GNUC__) || defined(__clang__)
 #include <stdint.h> /* for SIZE_MAX in case limits.h didn't get it */
 #endif
 #include <stdlib.h> /* for size_t, malloc(), etc */
 #include "share/compat.h"
 
 #ifndef SIZE_MAX
-# ifndef SIZE_T_MAX
-#  ifdef _MSC_VER
-#   ifdef _WIN64
-#    define SIZE_T_MAX FLAC__U64L(0xffffffffffffffff)
-#   else
-#    define SIZE_T_MAX 0xffffffff
-#   endif
+#  ifdef __GNUC__
+     /* gcc guarantees that SIZE_MAX exists on C99 and later */
+#    define SIZE_MAX ((size_t)-1)
+#  elif defined(_WIN32) || defined(_MSC_VER)
+     /* MSVC and old MinGW */
+#    ifdef _WIN64
+#      define SIZE_MAX ((size_t)0xffffffffffffffffULL)
+#    else
+#      define SIZE_MAX ((size_t)0xffffffffUL)
+#    endif
+#  elif defined(UINT_MAX) && (UINT_MAX == 0xffffffffUL)
+     /* 32-bit system */
+#    define SIZE_MAX UINT_MAX
+#  elif defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffffffffffULL)
+     /* 64-bit system */
+#    define SIZE_MAX ULONG_MAX
 #  else
-#   error
+     /* fallback - works on any conforming C99/C11 compiler */
+#    define SIZE_MAX ((size_t)-1)
 #  endif
-# endif
-# define SIZE_MAX SIZE_T_MAX
 #endif
 
 #ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
